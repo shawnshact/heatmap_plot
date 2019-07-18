@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
+import yaml
 
 def bin(val, binned_lst):
     assert val <= max(binned_lst[-1]), "Invalid input. Input value exceeds maximum bin value."
@@ -78,7 +79,7 @@ def heatmap(data, x_title, y_title, row_labels, col_labels, ax=None, cbarlabel="
     return im, cbar
 
 
-def plot_heatmap(data_path, id_col_idx, x_col_idx, y_col_idx, id_col_name, x_col_name, y_col_name, x_label_range, y_label_range,
+def plot_heatmap(data_path, id_col_name, x_col_name, y_col_name, x_label_range, y_label_range,
                     x_ticks=10, y_ticks=10, x_exp=True, y_exp=False, x_base=2, y_base=2, x_max_data_val=None, y_max_data_val=None,
                     x_min_data_val=None, y_min_data_val=None, colorbar_label='', color_map='coolwarm'):
 
@@ -86,10 +87,10 @@ def plot_heatmap(data_path, id_col_idx, x_col_idx, y_col_idx, id_col_name, x_col
 
     try:
         with open(data_file) as f:
-             df = pd.read_csv(f, usecols=[id_col_idx, x_col_idx, y_col_idx])
+             df = pd.read_csv(f, usecols=[id_col_name, x_col_name, y_col_name])
     except:
         with open(data_file, encoding='utf16') as f:
-             df = pd.read_csv(f, usecols=[id_col_idx, x_col_idx, y_col_idx])
+             df = pd.read_csv(f, usecols=[id_col_name, x_col_name, y_col_name])
 
     x_values = df[x_col_name].unique()
     y_values = df[y_col_name].unique()
@@ -146,48 +147,49 @@ def plot_heatmap(data_path, id_col_idx, x_col_idx, y_col_idx, id_col_name, x_col
 
     plt.show()
 
-def make_gui():
-    pass
-
 if __name__ == "__main__":
+    """
     #path to csv file
-    app = QtWidgets.QApplication(sys.argv)
+    App = QApplication(sys.argv)
+    window = Window(title="Heatmap Settings", top=300, left=800, width=400, height=300)
+    sys.exit(App.exec())
+    """
+    app = QApplication([])
+    config_filename = QFileDialog.getOpenFileName(None, caption="Select configuration file location.")[0]
 
-    data_file = 'mild_1 10X spacing 1um with allslots all.csv'
-
-    """ Information Specifying Column Indices (starting at 0 for the first column) """
-    id_col_idx = 1 # the way this program counts frequency is by using some unique identifier for each row, so make sure you include the index for the ID column
-    x_col_idx = 3 # index of desired column on x-axis
-    y_col_idx = 5 # index of desired column on y-axis
+    with open(config_filename, 'r') as config_file:
+        cfg = yaml.safe_load(config_file)
+    
+    data_file = cfg['csv_file']
 
     """ Information Specifying Column Names """ # must match names in csv file
-    id_col_name = 'ID'
-    x_col_name = 'Volume (µm³)'
-    y_col_name = 'Max Feret Diameter (µm)'
+    id_col_name = cfg['id_column_name']
+    x_col_name = cfg['x_axis_info']['column_name']
+    y_col_name = cfg['y_axis_info']['column_name']
 
     """ Heatmap Information """
-    x_label_range = [0,512] # range of values displayed on heatmap
-    y_label_range = [0,30]
+    x_label_range = [cfg['x_axis_info']['labels_min'], cfg['x_axis_info']['labels_max']] # range of values displayed on heatmap
+    y_label_range = [cfg['y_axis_info']['labels_min'], cfg['y_axis_info']['labels_max']]
 
-    x_ticks = None # number of bins in between range of values (graph gets weird if you make them too big). Does not apply for log scales.
-    y_ticks = 10
+    x_ticks = cfg['x_axis_info']['num_ticks'] # number of bins in between range of values (graph gets weird if you make them too big). Does not apply for log scales.
+    y_ticks = cfg['y_axis_info']['num_ticks']
 
-    x_max_data_val = max(x_label_range) # Number that thresholds data (for example, if you only wanted up until 128). Must be less than the respective label range
-    y_max_data_val = max(y_label_range)
+    x_max_data_val = cfg['x_axis_info']['data_max'] # Number that thresholds data (for example, if you only wanted up until 128). Must be less than the respective label range
+    y_max_data_val = cfg['y_axis_info']['data_max']
 
-    x_min_data_val = min(x_label_range)
-    y_min_data_val = min(y_label_range)
+    x_min_data_val = cfg['x_axis_info']['data_min']
+    y_min_data_val = cfg['y_axis_info']['data_min']
 
-    colorbar_label = 'Number of Aggregations'
-    cmap = 'PuOr'
+    colorbar_label = cfg['colorbar_label']
+    cmap = cfg['color_map']
 
-    x_log_scale = True # use logarithmic scale
-    y_log_scale = False
+    x_log_scale = cfg['x_axis_info']['logarithmic'] # use logarithmic scale
+    y_log_scale = cfg['y_axis_info']['logarithmic']
 
-    x_base = 2 # use base 2 for log x_log_scale
-    y_base = None
+    x_base = cfg['x_axis_info']['base'] # use base 2 for log x_log_scale
+    y_base = cfg['y_axis_info']['base']
 
     #make_gui()
-    plot_heatmap(data_file, id_col_idx, x_col_idx, y_col_idx, id_col_name, x_col_name, y_col_name, x_label_range, y_label_range, x_ticks=x_ticks,
+    plot_heatmap(data_file, id_col_name, x_col_name, y_col_name, x_label_range, y_label_range, x_ticks=x_ticks,
                     y_ticks=y_ticks, x_exp=x_log_scale, y_exp=y_log_scale, x_base=x_base, x_max_data_val=x_max_data_val, y_max_data_val=y_max_data_val,
                     x_min_data_val=x_min_data_val, y_min_data_val=y_min_data_val, colorbar_label=colorbar_label, color_map=cmap)

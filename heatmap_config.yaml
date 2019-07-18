@@ -1,0 +1,25 @@
+csv_file: /home/als-user/Downloads/mild_1 10X spacing 1um with allslots all.csv
+id_column_name: ID
+
+x_axis_info:
+  column_name: Volume (µm³)
+  labels_min: 0
+  labels_max: 512
+  data_min: 0
+  data_max: 512
+  logarithmic: True
+  num_ticks: None
+  base: 2
+
+y_axis_info:
+  column_name: Max Feret Diameter (µm)
+  labels_min: 0
+  labels_max: 30
+  data_min: 0
+  data_max: 30
+  logarithmic: False
+  num_ticks: 11
+  base: None
+
+colorbar_label: Number of Aggregations
+color_map: seismic
